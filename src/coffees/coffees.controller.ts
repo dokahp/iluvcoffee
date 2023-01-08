@@ -7,7 +7,7 @@ export class CoffeesController {
     return 'Return all coffees';
   }
   @Get(':id')
-  findOne(@Param() params) {
-    return `this endpoint returns one coffee by it [${params.id}]`
+  findOne(@Param('id') id: string) {
+    return `this endpoint returns one coffee by it id=[${id}]`
   }
 }
