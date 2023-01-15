@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CoffeesModule } from './coffees/coffees.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CoffeeRatingModule } from './coffee-rating/coffee-rating.module';
 
 @Module({
   imports: [CoffeesModule, TypeOrmModule.forRoot({
@@ -14,7 +15,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     database: 'postgres',
     autoLoadEntities: true,
     synchronize: true // delete on production!
-  })],
+  }), CoffeeRatingModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -13,7 +13,7 @@ async function bootstrap() {
       transform: true,
       forbidNonWhitelisted: true,
       transformOptions: {
-        enableImplicitConversion: true // проводит тип сразу к dto
+        enableImplicitConversion: true // проводит тип ?query сразу к dto
       }
     }),
   );
