@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 // whitelist: true - удаляет из запроса все свойства, которые не соответствуют dto
@@ -13,10 +14,18 @@ async function bootstrap() {
       transform: true,
       forbidNonWhitelisted: true,
       transformOptions: {
-        enableImplicitConversion: true // проводит тип ?query сразу к dto
-      }
+        enableImplicitConversion: true, // проводит тип ?query сразу к dto
+      },
     }),
   );
+  const config = new DocumentBuilder()
+    .setTitle('IluvCoffee API documentation')
+    .setDescription('The coffee endpoints')
+    .setVersion('1.0')
+    .addTag('Coffee')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
   await app.listen(3000);
 }
 bootstrap();
