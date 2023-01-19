@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { getBotToken } from 'nestjs-telegraf';
 import { AppModule } from './app.module';
 
 // whitelist: true - удаляет из запроса все свойства, которые не соответствуют dto
@@ -18,6 +19,8 @@ async function bootstrap() {
       },
     }),
   );
+  const telegrammBot = app.get(getBotToken())
+  app.use(telegrammBot.webhookCallback('/secret-path'));
   const config = new DocumentBuilder()
     .setTitle('IluvCoffee API documentation')
     .setDescription('The coffee endpoints')

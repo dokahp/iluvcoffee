@@ -2,12 +2,14 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto/pagination-query.dto';
 import { Event } from 'src/events/entities/event.entity/event.entity';
-import { Connection, DataSource, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { COFFEE_BRANDS } from './coffee-constants';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
 import { Coffee } from './entities/coffee.entity';
 import { Flavor } from './entities/flavor.entity';
+import { InjectBot } from 'nestjs-telegraf';
+import { Telegraf } from 'telegraf';
 
 @Injectable()
 export class CoffeesService {
@@ -18,6 +20,7 @@ export class CoffeesService {
     private readonly flavorRepository: Repository<Flavor>,
     @Inject(COFFEE_BRANDS) coffeeBrands: string[],
     private readonly connection: DataSource,
+    @InjectBot() private readonly bot: Telegraf,
   ) {}
 
   async findAll(paginationQuery: PaginationQueryDto) {
@@ -102,11 +105,26 @@ export class CoffeesService {
       await queryRunner.manager.save(coffee);
       await queryRunner.manager.save(recommendEvent);
       await queryRunner.commitTransaction();
+
+      this.sendRecommendationToBot(coffee);
     } catch (error) {
       await queryRunner.rollbackTransaction();
     } finally {
       await queryRunner.release();
     }
     return coffee;
+  }
+
+  async sendRecommendationToBot(coffee: Coffee) {
+    const chatId = 741146240; // enter chat id
+    const { id, name, brand, flavors, recomendations } = coffee;
+    await this.bot.telegram.sendMessage(
+      chatId,
+      `Number of recommendations: <b>${recomendations}</b>
+    Name: <i>${name}</i>
+    Brand: <u>${brand}</u>
+    Flavors: ${flavors.map((el) => el.name).join(', ')}`,
+      { parse_mode: 'HTML' },
+    );
   }
 }

@@ -4,6 +4,7 @@ import { CoffeesModule } from './coffees/coffees.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CoffeeRatingModule } from './coffee-rating/coffee-rating.module';
 import { ConfigModule } from '@nestjs/config';
+import { TelegrafModule } from 'nestjs-telegraf';
 
 @Module({
   imports: [
@@ -18,6 +19,9 @@ import { ConfigModule } from '@nestjs/config';
       database: process.env.DATABASE_NAME,
       autoLoadEntities: true,
       synchronize: true, // delete on production!
+    }),
+    TelegrafModule.forRoot({
+      token: '5872341466:AAG89sbyWwbxEzh1jpPg9XzL3j3oUfvLKSQ',
     }),
     CoffeeRatingModule,
   ],
