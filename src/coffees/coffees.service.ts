@@ -115,15 +115,17 @@ export class CoffeesService {
     return coffee;
   }
 
-  async sendRecommendationToBot(coffee: Coffee) {
+  async sendRecommendationToBot(coffee: Coffee): Promise<void> {
     const chatId = 741146240; // enter chat id
     const { id, name, brand, flavors, recomendations } = coffee;
+    const idString = `<b>id: ${id}</b>\n`;
+    const recommendString = `Number of recommendations: <b>${recomendations}</b>\n`;
+    const nameString = `Name: <i>${name}</i>\n`;
+    const brandString = `Brand: <u>${brand}</u>\n`;
+    const flavorsString = `Flavors: ${flavors.map((el) => el.name).join(', ')}`;
     await this.bot.telegram.sendMessage(
       chatId,
-      `Number of recommendations: <b>${recomendations}</b>
-    Name: <i>${name}</i>
-    Brand: <u>${brand}</u>
-    Flavors: ${flavors.map((el) => el.name).join(', ')}`,
+      idString + recommendString + nameString + brandString + flavorsString,
       { parse_mode: 'HTML' },
     );
   }
