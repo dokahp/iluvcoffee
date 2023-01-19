@@ -1,7 +1,8 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto/pagination-query.dto';
-import { Repository } from 'typeorm';
+import { Event } from 'src/events/entities/event.entity/event.entity';
+import { Connection, DataSource, Repository } from 'typeorm';
 import { COFFEE_BRANDS } from './coffee-constants';
 import { CreateCoffeeDto } from './dto/create-coffee.dto';
 import { UpdateCoffeeDto } from './dto/update-coffee.dto';
@@ -15,15 +16,16 @@ export class CoffeesService {
     private readonly coffeeRepository: Repository<Coffee>,
     @InjectRepository(Flavor)
     private readonly flavorRepository: Repository<Flavor>,
-    @Inject(COFFEE_BRANDS) coffeeBrands: string[]
-  ) {console.log(coffeeBrands)}
+    @Inject(COFFEE_BRANDS) coffeeBrands: string[],
+    private readonly connection: DataSource,
+  ) {}
 
   async findAll(paginationQuery: PaginationQueryDto) {
-    const {limit, offset} = paginationQuery;
+    const { limit, offset } = paginationQuery;
     return await this.coffeeRepository.find({
       relations: ['flavors'],
       take: limit,
-      skip: offset
+      skip: offset,
     });
   }
 
@@ -52,13 +54,17 @@ export class CoffeesService {
 
   async update(id: string, updateCoffeeDto: UpdateCoffeeDto) {
     // так как массива вкусов может не быть при обновлении делаем проверку
-    const flavors = updateCoffeeDto.flavors && (
-      await Promise.all(updateCoffeeDto.flavors.map(flavor => this.preloadFlavorByName(flavor)))
-    );
+    const flavors =
+      updateCoffeeDto.flavors &&
+      (await Promise.all(
+        updateCoffeeDto.flavors.map((flavor) =>
+          this.preloadFlavorByName(flavor),
+        ),
+      ));
     const coffee = await this.coffeeRepository.preload({
       id: +id,
       ...updateCoffeeDto,
-      flavors
+      flavors,
     });
     if (!coffee) {
       throw new NotFoundException(`Coffee with id=${id} not found`);
@@ -81,5 +87,26 @@ export class CoffeesService {
       return existingFlavor;
     }
     return this.flavorRepository.create({ name });
+  }
+
+  async recommendCoffee(coffee: Coffee) {
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      coffee.recomendations++;
+      const recommendEvent = new Event();
+      recommendEvent.name = 'recommend_coffee';
+      recommendEvent.type = 'coffee';
+      recommendEvent.payload = { coffeeId: coffee.id };
+      await queryRunner.manager.save(coffee);
+      await queryRunner.manager.save(recommendEvent);
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
+    }
+    return coffee;
   }
 }
